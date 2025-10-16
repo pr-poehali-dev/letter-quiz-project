@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -146,8 +146,13 @@ export default function Index() {
     }
   };
 
-  const correctAnswers = answers.filter((ans, idx) => shuffledWords[idx] && ans === shuffledWords[idx].correct).length;
-  const percentage = shuffledWords.length > 0 ? Math.round((correctAnswers / shuffledWords.length) * 100) : 0;
+  const correctAnswers = useMemo(() => {
+    return answers.filter((ans, idx) => shuffledWords[idx] && ans === shuffledWords[idx].correct).length;
+  }, [answers, shuffledWords]);
+  
+  const percentage = useMemo(() => {
+    return shuffledWords.length > 0 ? Math.round((correctAnswers / shuffledWords.length) * 100) : 0;
+  }, [correctAnswers, shuffledWords.length]);
 
   if (mode === 'menu') {
     return (

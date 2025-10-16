@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -86,29 +86,29 @@ function shuffleArray<T>(array: T[]): T[] {
 
 export default function Index() {
   const [mode, setMode] = useState<Mode>('menu');
-  const [shuffledWords, setShuffledWords] = useState<Word[]>([]);
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<('Е' | 'И' | null)[]>([]);
+  const [testWords, setTestWords] = useState<Word[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [userAnswers, setUserAnswers] = useState<('Е' | 'И')[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<'Е' | 'И' | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
 
   const startTest = () => {
     const shuffled = shuffleArray(words);
-    setShuffledWords(shuffled);
-    setMode('test');
-    setCurrentQuestion(0);
-    setAnswers(new Array(shuffled.length).fill(null));
+    setTestWords(shuffled);
+    setCurrentIndex(0);
+    setUserAnswers([]);
     setSelectedAnswer(null);
     setShowFeedback(false);
+    setMode('test');
   };
 
   const startTraining = () => {
     const shuffled = shuffleArray(words);
-    setShuffledWords(shuffled);
-    setMode('training');
-    setCurrentQuestion(0);
+    setTestWords(shuffled);
+    setCurrentIndex(0);
     setSelectedAnswer(null);
     setShowFeedback(false);
+    setMode('training');
   };
 
   const handleAnswer = (answer: 'Е' | 'И') => {
@@ -116,13 +116,12 @@ export default function Index() {
     setShowFeedback(true);
 
     if (mode === 'test') {
-      const newAnswers = [...answers];
-      newAnswers[currentQuestion] = answer;
-      setAnswers(newAnswers);
+      const newAnswers = [...userAnswers, answer];
+      setUserAnswers(newAnswers);
 
       setTimeout(() => {
-        if (currentQuestion < shuffledWords.length - 1) {
-          setCurrentQuestion(currentQuestion + 1);
+        if (currentIndex < testWords.length - 1) {
+          setCurrentIndex(currentIndex + 1);
           setSelectedAnswer(null);
           setShowFeedback(false);
         } else {
@@ -133,26 +132,25 @@ export default function Index() {
   };
 
   const nextTraining = () => {
-    if (currentQuestion < shuffledWords.length - 1) {
-      setCurrentQuestion(currentQuestion + 1);
+    if (currentIndex < testWords.length - 1) {
+      setCurrentIndex(currentIndex + 1);
       setSelectedAnswer(null);
       setShowFeedback(false);
     } else {
       const shuffled = shuffleArray(words);
-      setShuffledWords(shuffled);
-      setCurrentQuestion(0);
+      setTestWords(shuffled);
+      setCurrentIndex(0);
       setSelectedAnswer(null);
       setShowFeedback(false);
     }
   };
 
-  const correctAnswers = useMemo(() => {
-    return answers.filter((ans, idx) => shuffledWords[idx] && ans === shuffledWords[idx].correct).length;
-  }, [answers, shuffledWords]);
-  
-  const percentage = useMemo(() => {
-    return shuffledWords.length > 0 ? Math.round((correctAnswers / shuffledWords.length) * 100) : 0;
-  }, [correctAnswers, shuffledWords.length]);
+  const stats = useMemo(() => {
+    const correct = userAnswers.filter((ans, idx) => ans === testWords[idx]?.correct).length;
+    const total = testWords.length;
+    const percent = total > 0 ? Math.round((correct / total) * 100) : 0;
+    return { correct, total, percent };
+  }, [userAnswers, testWords]);
 
   if (mode === 'menu') {
     return (
@@ -209,24 +207,24 @@ export default function Index() {
           <Card className="p-8 md:p-12">
             <div className="text-center mb-8">
               <div className="inline-flex items-center justify-center w-24 h-24 rounded-3xl bg-primary/10 mb-6">
-                {percentage >= 80 ? (
+                {stats.percent >= 80 ? (
                   <Icon name="Trophy" size={48} className="text-primary" />
-                ) : percentage >= 60 ? (
+                ) : stats.percent >= 60 ? (
                   <Icon name="Star" size={48} className="text-accent" />
                 ) : (
                   <Icon name="Target" size={48} className="text-muted-foreground" />
                 )}
               </div>
               <h2 className="text-4xl font-bold mb-4">Результаты теста</h2>
-              <div className="text-6xl font-bold text-primary mb-2">{percentage}%</div>
+              <div className="text-6xl font-bold text-primary mb-2">{stats.percent}%</div>
               <p className="text-lg text-muted-foreground">
-                Правильных ответов: {correctAnswers} из {shuffledWords.length}
+                Правильных ответов: {stats.correct} из {stats.total}
               </p>
             </div>
 
             <div className="space-y-3 mb-8">
-              {shuffledWords.map((word, idx) => {
-                const userAnswer = answers[idx];
+              {testWords.map((word, idx) => {
+                const userAnswer = userAnswers[idx];
                 const isCorrect = userAnswer === word.correct;
                 return (
                   <div
@@ -269,12 +267,9 @@ export default function Index() {
     );
   }
 
-  const currentWord = shuffledWords[currentQuestion];
-  
-  if (!currentWord) {
-    return null;
-  }
-  
+  const currentWord = testWords[currentIndex];
+  if (!currentWord) return null;
+
   const isCorrect = selectedAnswer === currentWord.correct;
 
   return (
@@ -286,13 +281,13 @@ export default function Index() {
             Выход
           </Button>
           <div className="text-sm font-medium text-muted-foreground">
-            Вопрос {currentQuestion + 1} из {shuffledWords.length}
+            Вопрос {currentIndex + 1} из {testWords.length}
           </div>
         </div>
 
         {mode === 'test' && (
           <div className="mb-6">
-            <Progress value={((currentQuestion + 1) / shuffledWords.length) * 100} className="h-2" />
+            <Progress value={((currentIndex + 1) / testWords.length) * 100} className="h-2" />
           </div>
         )}
 
@@ -361,7 +356,7 @@ export default function Index() {
               {mode === 'training' && (
                 <div className="mt-6">
                   <Button size="lg" className="w-full" onClick={nextTraining}>
-                    {currentQuestion < words.length - 1 ? 'Следующее слово' : 'Начать сначала'}
+                    {currentIndex < testWords.length - 1 ? 'Следующее слово' : 'Начать сначала'}
                     <Icon name="ArrowRight" size={20} className="ml-2" />
                   </Button>
                 </div>

@@ -266,6 +266,15 @@ export default function Index() {
   }
 
   const currentWord = activeWords[currentQuestion];
+  
+  if (!currentWord) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Button onClick={() => setMode('menu')}>Вернуться в меню</Button>
+      </div>
+    );
+  }
+  
   const isCorrect = selectedAnswer === currentWord.correct;
 
   return (

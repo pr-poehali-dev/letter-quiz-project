@@ -146,7 +146,6 @@ export default function Index() {
     }
   };
 
-  const activeWords = shuffledWords.length > 0 ? shuffledWords : words;
   const correctAnswers = answers.filter((ans, idx) => shuffledWords[idx] && ans === shuffledWords[idx].correct).length;
   const percentage = shuffledWords.length > 0 ? Math.round((correctAnswers / shuffledWords.length) * 100) : 0;
 

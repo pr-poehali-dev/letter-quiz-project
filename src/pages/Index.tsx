@@ -75,22 +75,36 @@ const words: Word[] = [
 
 type Mode = 'menu' | 'test' | 'results' | 'training';
 
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export default function Index() {
   const [mode, setMode] = useState<Mode>('menu');
+  const [shuffledWords, setShuffledWords] = useState<Word[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<('Е' | 'И' | null)[]>([]);
   const [selectedAnswer, setSelectedAnswer] = useState<'Е' | 'И' | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
 
   const startTest = () => {
+    const shuffled = shuffleArray(words);
+    setShuffledWords(shuffled);
     setMode('test');
     setCurrentQuestion(0);
-    setAnswers(new Array(words.length).fill(null));
+    setAnswers(new Array(shuffled.length).fill(null));
     setSelectedAnswer(null);
     setShowFeedback(false);
   };
 
   const startTraining = () => {
+    const shuffled = shuffleArray(words);
+    setShuffledWords(shuffled);
     setMode('training');
     setCurrentQuestion(0);
     setSelectedAnswer(null);
@@ -107,31 +121,34 @@ export default function Index() {
       setAnswers(newAnswers);
 
       setTimeout(() => {
-        if (currentQuestion < words.length - 1) {
+        if (currentQuestion < shuffledWords.length - 1) {
           setCurrentQuestion(currentQuestion + 1);
           setSelectedAnswer(null);
           setShowFeedback(false);
         } else {
           setMode('results');
         }
-      }, 1500);
+      }, 800);
     }
   };
 
   const nextTraining = () => {
-    if (currentQuestion < words.length - 1) {
+    if (currentQuestion < shuffledWords.length - 1) {
       setCurrentQuestion(currentQuestion + 1);
       setSelectedAnswer(null);
       setShowFeedback(false);
     } else {
+      const shuffled = shuffleArray(words);
+      setShuffledWords(shuffled);
       setCurrentQuestion(0);
       setSelectedAnswer(null);
       setShowFeedback(false);
     }
   };
 
-  const correctAnswers = answers.filter((ans, idx) => ans === words[idx].correct).length;
-  const percentage = Math.round((correctAnswers / words.length) * 100);
+  const activeWords = mode === 'menu' ? words : shuffledWords;
+  const correctAnswers = answers.filter((ans, idx) => ans === activeWords[idx]?.correct).length;
+  const percentage = Math.round((correctAnswers / activeWords.length) * 100);
 
   if (mode === 'menu') {
     return (
@@ -156,7 +173,7 @@ export default function Index() {
                 <div>
                   <h3 className="text-xl font-semibold mb-2">Тестирование</h3>
                   <p className="text-muted-foreground">
-                    Пройдите тест из {words.length} вопросов и узнайте свой результат
+                    Пройдите тест из {words.length} вопросов в случайном порядке
                   </p>
                 </div>
               </div>
@@ -199,12 +216,12 @@ export default function Index() {
               <h2 className="text-4xl font-bold mb-4">Результаты теста</h2>
               <div className="text-6xl font-bold text-primary mb-2">{percentage}%</div>
               <p className="text-lg text-muted-foreground">
-                Правильных ответов: {correctAnswers} из {words.length}
+                Правильных ответов: {correctAnswers} из {activeWords.length}
               </p>
             </div>
 
             <div className="space-y-3 mb-8">
-              {words.map((word, idx) => {
+              {activeWords.map((word, idx) => {
                 const userAnswer = answers[idx];
                 const isCorrect = userAnswer === word.correct;
                 return (
@@ -248,7 +265,7 @@ export default function Index() {
     );
   }
 
-  const currentWord = words[currentQuestion];
+  const currentWord = activeWords[currentQuestion];
   const isCorrect = selectedAnswer === currentWord.correct;
 
   return (
@@ -260,13 +277,13 @@ export default function Index() {
             Выход
           </Button>
           <div className="text-sm font-medium text-muted-foreground">
-            Вопрос {currentQuestion + 1} из {words.length}
+            Вопрос {currentQuestion + 1} из {activeWords.length}
           </div>
         </div>
 
         {mode === 'test' && (
           <div className="mb-6">
-            <Progress value={((currentQuestion + 1) / words.length) * 100} className="h-2" />
+            <Progress value={((currentQuestion + 1) / activeWords.length) * 100} className="h-2" />
           </div>
         )}
 

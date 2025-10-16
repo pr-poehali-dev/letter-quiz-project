@@ -146,9 +146,9 @@ export default function Index() {
     }
   };
 
-  const activeWords = mode === 'menu' ? words : shuffledWords;
-  const correctAnswers = answers.filter((ans, idx) => ans === activeWords[idx]?.correct).length;
-  const percentage = Math.round((correctAnswers / activeWords.length) * 100);
+  const activeWords = shuffledWords.length > 0 ? shuffledWords : words;
+  const correctAnswers = answers.filter((ans, idx) => shuffledWords[idx] && ans === shuffledWords[idx].correct).length;
+  const percentage = shuffledWords.length > 0 ? Math.round((correctAnswers / shuffledWords.length) * 100) : 0;
 
   if (mode === 'menu') {
     return (
@@ -216,12 +216,12 @@ export default function Index() {
               <h2 className="text-4xl font-bold mb-4">Результаты теста</h2>
               <div className="text-6xl font-bold text-primary mb-2">{percentage}%</div>
               <p className="text-lg text-muted-foreground">
-                Правильных ответов: {correctAnswers} из {activeWords.length}
+                Правильных ответов: {correctAnswers} из {shuffledWords.length}
               </p>
             </div>
 
             <div className="space-y-3 mb-8">
-              {activeWords.map((word, idx) => {
+              {shuffledWords.map((word, idx) => {
                 const userAnswer = answers[idx];
                 const isCorrect = userAnswer === word.correct;
                 return (
@@ -265,14 +265,10 @@ export default function Index() {
     );
   }
 
-  const currentWord = activeWords[currentQuestion];
+  const currentWord = shuffledWords[currentQuestion];
   
   if (!currentWord) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Button onClick={() => setMode('menu')}>Вернуться в меню</Button>
-      </div>
-    );
+    return null;
   }
   
   const isCorrect = selectedAnswer === currentWord.correct;
@@ -286,13 +282,13 @@ export default function Index() {
             Выход
           </Button>
           <div className="text-sm font-medium text-muted-foreground">
-            Вопрос {currentQuestion + 1} из {activeWords.length}
+            Вопрос {currentQuestion + 1} из {shuffledWords.length}
           </div>
         </div>
 
         {mode === 'test' && (
           <div className="mb-6">
-            <Progress value={((currentQuestion + 1) / activeWords.length) * 100} className="h-2" />
+            <Progress value={((currentQuestion + 1) / shuffledWords.length) * 100} className="h-2" />
           </div>
         )}
 
